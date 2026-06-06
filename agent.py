@@ -1,6 +1,7 @@
 from langgraph.graph import StateGraph, END
 from state import ResearchState
 from nodes import search_node, summarizer_node, critic_node
+from langgraph.checkpoint.memory import MemorySaver  # NEW
 
 
 def build_graph():
@@ -18,8 +19,9 @@ def build_graph():
     graph.add_edge("search_node", "summarizer_node")
     graph.add_edge("summarizer_node", "critic_node")
     graph.add_edge("critic_node", END)
-
-    return graph.compile()
+    
+    checkpointer = MemorySaver()                  
+    return graph.compile(checkpointer=checkpointer)   
 
 
 graph = build_graph()

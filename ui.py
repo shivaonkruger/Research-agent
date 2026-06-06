@@ -1,4 +1,4 @@
-
+import uuid  
 import streamlit as st
 import requests
 import json
@@ -148,6 +148,8 @@ if "current" not in st.session_state:
 if "active_stage" not in st.session_state:
     st.session_state.active_stage = None  # which node is currently running
 
+if "thread_id" not in st.session_state:
+    st.session_state.thread_id = str(uuid.uuid4())
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
@@ -277,7 +279,10 @@ if search_btn and question.strip():
     try:
         with requests.post(
             f"{API_URL}/research",
-            json={"question": q},
+           json={
+                "question": q,
+                "thread_id": st.session_state.thread_id,               
+            },
             stream=True,
             timeout=120
         ) as resp:

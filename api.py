@@ -23,6 +23,7 @@ app.add_middleware(
 
 class ResearchRequest(BaseModel):
     question: str
+    thread_id: str 
 
 STAGE_LABELS = {
     "search_node":     "Searching the web...",
@@ -31,11 +32,12 @@ STAGE_LABELS = {
 }
 
 
-async def stream_pipeline(question: str):
+async def stream_pipeline(question: str, thread_id: str):
     initial_state = {"question": question, "search_results": []}
+    config = {"configurable": {"thread_id": thread_id}}
 
     try:
-        for chunk in graph.stream(initial_state):
+        for chunk in graph.stream(initial_state, config=config):
             node_name = list(chunk.keys())[0]
             node_output = chunk[node_name]
 
@@ -85,7 +87,7 @@ def health():
 @app.post("/research")
 async def research(request: ResearchRequest):
     return StreamingResponse(
-        stream_pipeline(request.question),
+        stream_pipeline(request.question, request.thread_id), 
         media_type="text/plain"
     )
 

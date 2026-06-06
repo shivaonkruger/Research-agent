@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from tavily import TavilyClient
+from langchain_core.messages import HumanMessage, AIMessage
 
 from state import ResearchState
 from prompts import SUMMARIZER_PROMPT, CRITIC_PROMPT
@@ -86,8 +87,21 @@ def summarizer_node(state: ResearchState) -> dict:
             f"Content: {result['content']}\n\n"
         )
 
+    # in summarizer_node — replace the user_message block with this:
+
+    # pull last 6 messages for context (trim strategy — prevents overflow)
+    history = state.get("messages", [])[-6:]
+    history_text = ""
+    if history:
+        history_text = "Prior conversation context:\n"
+        for msg in history:
+            role = "User" if msg.type == "human" else "Assistant"
+            history_text += f"{role}: {msg.content[:300]}\n"
+        history_text += "\n"
+
     user_message = (
-        f"Research Question: {question}\n\n"
+        f"{history_text}"
+        f"Current Research Question: {question}\n\n"
         f"Search Results:\n{formatted_results}\n"
         f"Write a comprehensive summary of these search results."
     )
@@ -155,4 +169,9 @@ def critic_node(state: ResearchState) -> dict:
     return {
         "critique": critique,
         "final_response": final_response,
+        # NEW — append this Q&A turn to conversation history
+        "messages": [
+            HumanMessage(content=question),
+            AIMessage(content=final_response),
+        ]
     }
